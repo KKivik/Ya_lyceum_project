@@ -1,0 +1,72 @@
+import os
+import sys
+from cryptography.fernet import Fernet
+
+drive_letter = "E" #имя буквы внешнего накопителя
+encrypted_path = "C:/Data" #что шифровать?
+
+def check_drive(drive_letter): #эта функция проверяет вставлен ли вообще флеш-накопитель
+	if os.system("cd " + drive_letter + ":") == 0: #если там что-то есть
+		return True
+	else:
+		return False
+
+def write_key():
+	key = Fernet.generate_key()
+
+	with open(drive_letter + ":/key.txt", "wb") as key_file:
+		key_file.write(key)
+
+def load_key():
+	with open(drive_letter + ":/key.txt", "r") as file:
+		key = file.read()
+
+	return key
+
+def encrypt(filename, key): # Шифрование файла
+	fernet = Fernet(key)
+
+	with open(filename, "rb") as file:
+		file_data = file.read()
+
+		encrypted_data = fernet.encrypt(file_data)
+
+		with open(filename, "wb") as file:
+			file.write(encrypted_data)
+
+def decrypt(filename, key): # Расшифровка файла
+	fernet = Fernet(key)
+
+	with open(filename, "rb") as file:
+		file_data = file.read()
+
+	decrypted_data = fernet.decrypt(file_data)
+
+	with open(filename, "wb") as file:
+		file.write(decrypted_data)
+
+
+def walk(directory): #Бегает по директории и шифрует файлф
+	names = os.listdir(directory)
+
+	for name in names:
+		path = os.path.join(directory, name)
+		ext = os.path.splitext(path)
+
+		if os.path.isfile(path):
+			encrypt(path, key)
+		else:
+			walk(path)
+
+if os.path.isfile(drive_letter + ":/key.txt") == False:
+	write_key()
+	key = load_key()
+else:
+	key = load_key()
+
+# while True:
+# 	if not check_drive(drive_letter):
+# 		walk(encrypted_path)
+# 		print("Encrypted!")
+# 		break
+
